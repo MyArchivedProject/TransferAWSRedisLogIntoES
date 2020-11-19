@@ -1,22 +1,9 @@
-## config
-- Linux
-```bash
-export AWS_ACCESS_KEY_ID=YOUR_AKID
-export AWS_SECRET_ACCESS_KEY=YOUR_SECRET_KEY
-export AWS_SESSION_TOKEN=TOKEN
-export AWS_REGION=REGION
-```
-- Windows
-```powershell
-set AWS_ACCESS_KEY_ID=YOUR_AKID
-set AWS_SECRET_ACCESS_KEY=YOUR_SECRET_KEY
-set AWS_SESSION_TOKEN=TOKEN
-set AWS_REGION=REGION
-```
-
-- Configuration file
-```
-load credentials from ~/.aws/credentials
-and region from ~/.aws/config.
-```
 ##
+参考文档
+https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html
+https://pkg.go.dev/github.com/go-redis/redis/v8#pkg-functions
+https://github.com/elastic/go-elasticsearch
+
+##
+- 错误处理方式：函数内的错误直接在函数内输出 
+cp config.template.yaml config.yaml
