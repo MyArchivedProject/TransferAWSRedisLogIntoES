@@ -15,6 +15,7 @@ func main() {
 	PushDataToES(allSlowLogArr)
 
 	// data, _ := json.Marshal(allSlowLogArr)
+	// fmt.Printf(string(data))
 	// var out bytes.Buffer
 	// json.Indent(&out, data, "", "\t")
 	// fmt.Printf("array=%v\n", out.String())

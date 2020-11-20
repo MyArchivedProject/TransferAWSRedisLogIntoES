@@ -17,7 +17,7 @@ var ctx = context.Background()
 
 // RedisSlowLog 所有的慢日志
 type RedisSlowLog struct {
-	RedisCluster  string `type:"string"`
+	RedisCluster string `type:"string"`
 	RedisAddress string `type:"string"`
 	RedisPort    int64  `type:"int"`
 	ID           int64
@@ -67,7 +67,7 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 		log.Println("connectMultiRedis() redisNodeInfoArr==[]")
 		return nil
 	}
-	redisSlowLogArr = make([]RedisSlowLog, nodeNum*int(slowlogNum)/2)
+	redisSlowLogArr = make([]RedisSlowLog, 0)
 
 	// 遍历所有节点
 	for i := 0; i < nodeNum; i++ {
@@ -82,9 +82,9 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 		// defer rdb.Close() // 选择手动close
 		// 遍历节点上所有的慢日志
 		slowLogArr := getSlowLog(rdb, slowlogNum)
-		for j :=0; j< len(slowLogArr);j++{
+		for j := 0; j < len(slowLogArr); j++ {
 			slowLog := &RedisSlowLog{
-				RedisCluster:  clustName,
+				RedisCluster: clustName,
 				RedisAddress: address,
 				RedisPort:    port,
 				ID:           slowLogArr[j].ID,
@@ -92,7 +92,7 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 				Duration:     slowLogArr[j].Duration,
 				Args:         slowLogArr[j].Args,
 			}
-			redisSlowLogArr = append(redisSlowLogArr,*slowLog)
+			redisSlowLogArr = append(redisSlowLogArr, *slowLog)
 		}
 		rdb.Close()
 	}
