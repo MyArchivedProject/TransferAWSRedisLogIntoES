@@ -19,7 +19,7 @@ func main() {
 	// 获取redis慢日志
 	allSlowLogArr := GetMultiRedisSlowLog(redisNodeInfoArr)
 
-	// 插入进ES
+	// 插入数据进ES
 	byteData, _ := json.Marshal(allSlowLogArr)
 	var dataArr []map[string]interface{}
 	_ = json.Unmarshal(byteData, &dataArr)
