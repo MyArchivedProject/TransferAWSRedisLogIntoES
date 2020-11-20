@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -16,59 +14,55 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
+type esConf struct {
+	AddressArr []string
+	Username   string
+	Password   string
+}
+
 func connectES() *elasticsearch.Client {
-	address := viper.GetString("es.address")
-	if address == "" {
-		log.Fatalln("Fatal connectES(): Can not get es address")
-	}
-	log.Println("connecting es: address=" + address + "; elasticsearchSDKVersion=" + elasticsearch.Version)
-	cfg := elasticsearch.Config{
-		Addresses: []string{
-			address,
-		},
-		Username: "",
-		Password: "",
-	}
-	es, err := elasticsearch.NewClient(cfg)
-	if err != nil {
-		log.Fatalln("Error connectES() creating the client:\n" + error.Error(err))
+	if viper.GetString("es.address") == "" {
+		errorExit(fmt.Errorf("%s", "Can not get es address from config"))
 	}
 
-	res, err := es.Info()
-	if err != nil {
-		log.Fatalln("Error connectES() getting response:\n" + error.Error(err))
+	var addressArr []string = make([]string, 0)
+	addressArr = append(addressArr, viper.GetString("es.address"))
+	esConf := esConf{
+		AddressArr: addressArr,
+		Username:   "",
+		Password:   "",
 	}
+	printLog("connecting es: address=" + addressArr[0] + "; elasticsearchSDKVersion=" + elasticsearch.Version)
+
+	cfg := elasticsearch.Config{
+		Addresses: esConf.AddressArr,
+		Username:  "",
+		Password:  "",
+	}
+	es, err := elasticsearch.NewClient(cfg)
+
+	errorExit(err)
+
+	res, err := es.Info()
+	errorExit(err)
+
 	defer res.Body.Close()
 	if res.IsError() {
-		log.Fatalf("Error connectES(): %s", res.String())
+		errorExit(fmt.Errorf("%s", res.String()))
 	}
-	log.Println(res)
+	printLog(res)
 	return es
 }
 
-// func operateES1(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
-// 	// Create the BulkIndexer
-// 	bi, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-// 		Index:      "redis-slowlog-", // The default index name
-// 		Client:     es,               // The Elasticsearch client
-// 		NumWorkers: 2,                // The number of worker goroutines
-// 		//FlushBytes:    int(flushBytes),  // The flush threshold in bytes
-// 		//FlushInterval: 30 * time.Second, // The periodic flush interval
-// 	})
-// }
-func checkError(err error) {
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-func insertBatch(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
-	slowlogNum := len(redisSlowLogArr)
+func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, index string) {
+	slowlogNum := len(dataArr)
 	var bodyBuf bytes.Buffer
+
+	// 遍历慢日志 生成Buffer
 	for i := 0; i < slowlogNum; i++ {
 		createLine := map[string]interface{}{
 			"create": map[string]interface{}{
-				"_index": "redis-slowlog-",
+				"_index": index,
 				// "_id":    "test_" + strconv.Itoa(i),
 				// "_type":  "test_type",
 			},
@@ -82,7 +76,7 @@ func insertBatch(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 		// 	"v":   i,
 		// 	"str": "test" + strconv.Itoa(i),
 		// }
-		body := redisSlowLogArr[i]
+		body := dataArr[i]
 		jsonStr, _ = json.Marshal(body)
 		bodyBuf.Write(jsonStr)
 		bodyBuf.WriteByte('\n')
@@ -92,13 +86,14 @@ func insertBatch(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 		Body: &bodyBuf,
 	}
 	res, err := req.Do(context.Background(), es)
-	checkError(err)
 	defer res.Body.Close()
-	fmt.Println(res.String())
+	errorTolerate(err)
+
+	printLog(res.String())
 }
 
-// v1 非批量插入
-func operateESSingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
+// 未使用到
+func insertSiingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 	// 方式一
 	// res, err = es.Index(
 	// 	"test",                                  // Index name
@@ -123,15 +118,18 @@ func operateESSingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 	}
 
 	res, err := req.Do(context.Background(), es)
-	if err != nil {
-		log.Fatalf("Error operateES() Error getting response: %s", err)
-	}
+
+	errorTolerate(err)
+
 	defer res.Body.Close()
 
-	log.Println(res)
+	printLog(res)
 }
-func PushDataToES(redisSlowLogArr []RedisSlowLog) {
-	es := connectES()
-	insertBatch(es, redisSlowLogArr)
 
+// PushDataToES 批量推数据进es
+func PushDataToES(dataArr []map[string]interface{}) {
+	es := connectES()
+	index := viper.GetString("es.index")
+	insertBatch(es, dataArr, index)
+	printLog("批量插入数据进ES结束")
 }

@@ -1,5 +1,7 @@
 package main
 
+import "encoding/json"
+
 // "github.com/aws/aws-sdk-go/service/s3"
 
 func main() {
@@ -10,9 +12,15 @@ func main() {
 	testNode := redisNodeInfoArr[:1]
 	testNode[0].RedisAddress = "54.83.160.248"
 	testNode[0].RedisPort = 6379
+
+
 	allSlowLogArr := GetMultiRedisSlowLog(testNode)
 
-	PushDataToES(allSlowLogArr)
+	byteData, _ := json.Marshal(allSlowLogArr)
+	var dataArr []map[string]interface{}
+	_ = json.Unmarshal(byteData, &dataArr)
+
+	PushDataToES(dataArr)
 
 	// data, _ := json.Marshal(allSlowLogArr)
 	// fmt.Printf(string(data))

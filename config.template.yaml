@@ -2,6 +2,9 @@ aws:
   AWS_ACCESS_KEY_ID: ""
   AWS_SECRET_ACCESS_KEY: ""
   # AWS_SESSION_TOKEN: "TOKEN"
-  AWS_Region: ""
-
+  AWS_REGION: ""
+redis:
+  slowlog_num: 128
 es:
+  address: ""
+  index: ""
