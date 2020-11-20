@@ -23,7 +23,7 @@ type RedisSlowLog struct {
 	RedisPort    int64  `type:"int"`
 	ID           int64
 	Time         time.Time
-	Duration     time.Duration
+	Duration     time.Duration // 毫秒
 	Args         []string
 }
 
@@ -101,7 +101,7 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 					RedisPort:    port,
 					ID:           slowLogArr[j].ID,
 					Time:         slowLogArr[j].Time,
-					Duration:     slowLogArr[j].Duration,
+					Duration:     slowLogArr[j].Duration / 1000,
 					Args:         slowLogArr[j].Args,
 				}
 				redisSlowLogArr = append(redisSlowLogArr, *slowLog)

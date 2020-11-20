@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 	// elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
@@ -60,13 +61,25 @@ func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, ind
 
 	// 遍历慢日志 生成Buffer
 	for i := 0; i < slowlogNum; i++ {
+
+		// 创建唯一ID,防止重复插入
+		timeTemp, _ := time.Parse("2006-01-02T15:04:05+08:00", dataArr[i]["Time"].(string))
+		timeStamp := timeTemp.Unix()
+		// uniqID := dataArr[i]["RedisAddress"].(string) + strconv.FormatFloat(dataArr[i]["ID"].(float64), 'E', -1, 64) + strconv.FormatInt(timeStamp, 10)
+		uniqID := fmt.Sprint(dataArr[i]["RedisAddress"], dataArr[i]["ID"], timeStamp)
+
 		createLine := map[string]interface{}{
 			"create": map[string]interface{}{
 				"_index": index,
-				// "_id":    "test_" + strconv.Itoa(i),
-				// "_type":  "test_type",
+				"_id":    uniqID,
 			},
 		}
+
+		// fmt.Println(dataArr[i]["Duration"])
+		// fmt.Println(dataArr[i]["ID"])
+		// fmt.Println(dataArr[i]["RedisAddress"])
+		// fmt.Println(dataArr[i]["Time"])
+
 		jsonStr, _ := json.Marshal(createLine)
 		bodyBuf.Write(jsonStr)
 		bodyBuf.WriteByte('\n')

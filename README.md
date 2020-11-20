@@ -6,9 +6,15 @@ https://github.com/elastic/go-elasticsearch
 
 https://www.cnblogs.com/Me1onRind/p/11534544.html
 
-## 架构
+## 结构
 1. 错误处理方式：函数内的错误不返回调用层，直接在函数内输出。
 
 
 ## 部署
-cp config.template.yaml config.yaml
+1. 编译
+go build
+
+2. 填写配置文件
+cp config.template.yaml .config.yaml
+
+3. 运行二进制文件
