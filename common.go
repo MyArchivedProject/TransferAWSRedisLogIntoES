@@ -10,7 +10,7 @@ func errorExit(err error) {
 	if err != nil {
 		pc, _, _, _ := runtime.Caller(2)
 		funcName := runtime.FuncForPC(pc).Name() // 获取函数调用者的名字
-		log.Println("Error, exit.\n Function: " + funcName + "Error:\n" + error.Error(err))
+		log.Println("-----------------------------\nError, exit.\n Function: " + funcName + "Error:\n" + error.Error(err))
 		os.Exit(1)
 	}
 }
