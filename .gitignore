@@ -1,3 +1,4 @@
 .aws/
 .config.yaml
 *.exe
+test.go

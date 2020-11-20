@@ -96,6 +96,7 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 			connectRedisSuccessNum++
 			// 遍历节点上所有的慢日志
 			slowLogArr := getSlowLog(rdb, slowlogNum)
+			printLog( "redisID=" + redisID + "; 慢日志数量=" + strconv.Itoa(len(slowLogArr)) )
 			for j := 0; j < len(slowLogArr); j++ {
 				slowLog := &RedisSlowLog{
 					RedisCluster: clustName,

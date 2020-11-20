@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,6 +58,7 @@ func connectES() *elasticsearch.Client {
 
 func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, index string) {
 	slowlogNum := len(dataArr)
+	printLog("将向ES批量插入 " + strconv.Itoa(slowlogNum) + " 条数据")
 	var bodyBuf bytes.Buffer
 
 	// 遍历慢日志 生成Buffer

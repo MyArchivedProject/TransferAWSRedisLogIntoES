@@ -16,6 +16,7 @@ func main() {
 	// testNode[0].RedisID = "vova-multi-test-3-vova1"
 	// testNode[0].RedisCluster = "vova-multi-test-3-vova1"
 
+	// TODO 先去检查redis和es是否可连接
 	// 获取redis慢日志
 	allSlowLogArr := GetMultiRedisSlowLog(redisNodeInfoArr)
 
