@@ -25,6 +25,5 @@ func errorTolerate(err error) {
 func printLog(smg interface{}) {
 	pc, _, _, _ := runtime.Caller(2)
 	funcName := runtime.FuncForPC(pc).Name() // 获取函数调用者的名字
-	log.Println("Function: " + funcName + "  message: ")
-	log.Println(smg)
+	log.Println("Function: " + funcName + "  message: \n" + smg.(string))
 }

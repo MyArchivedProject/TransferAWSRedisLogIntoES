@@ -6,20 +6,23 @@ import "encoding/json"
 
 func main() {
 	InitConfig("")
+	// 获取aws的redis节点连接信息
 	redisNodeInfoArr := GetAwsRedisClusterInfo()
 
 	// test
-	testNode := redisNodeInfoArr[:1]
-	testNode[0].RedisAddress = "54.83.160.248"
-	testNode[0].RedisPort = 6379
+	// testNode := redisNodeInfoArr[:1]
+	// testNode[0].RedisAddress = "54.83.160.248"
+	// testNode[0].RedisPort = 6379
+	// testNode[0].RedisID = "vova-multi-test-3-vova1"
+	// testNode[0].RedisCluster = "vova-multi-test-3-vova1"
 
+	// 获取redis慢日志
+	allSlowLogArr := GetMultiRedisSlowLog(redisNodeInfoArr)
 
-	allSlowLogArr := GetMultiRedisSlowLog(testNode)
-
+	// 插入进ES
 	byteData, _ := json.Marshal(allSlowLogArr)
 	var dataArr []map[string]interface{}
 	_ = json.Unmarshal(byteData, &dataArr)
-
 	PushDataToES(dataArr)
 
 	// data, _ := json.Marshal(allSlowLogArr)

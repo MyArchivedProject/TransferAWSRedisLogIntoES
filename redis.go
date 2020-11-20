@@ -70,6 +70,8 @@ func getRedisSlowLog() {
 // GetMultiRedisSlowLog 输入：每个redis节点信息  成功输出：所有的慢日志  失败输出：nil
 func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []RedisSlowLog) {
 	nodeNum := len(redisNodeInfoArr)
+	printLog("Start. redisNodeNum=" + strconv.Itoa(nodeNum))
+	connectRedisSuccessNum := 0
 	slowlogNum := viper.GetInt64("redis.slowlog_num")
 	if nodeNum == 0 {
 		printLog("输入的Redis节点个数为0")
@@ -91,6 +93,7 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 		rdb := getRedisClient(redisConf)
 		if rdb != nil {
 			defer rdb.Close()
+			connectRedisSuccessNum++
 			// 遍历节点上所有的慢日志
 			slowLogArr := getSlowLog(rdb, slowlogNum)
 			for j := 0; j < len(slowLogArr); j++ {
@@ -108,5 +111,6 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 			}
 		}
 	}
+	printLog("End. redisNodeNum=" + strconv.Itoa(nodeNum) + "connectRedisSuccessNum" + strconv.Itoa(connectRedisSuccessNum))
 	return redisSlowLogArr
 }
