@@ -14,6 +14,7 @@ https://www.cnblogs.com/Me1onRind/p/11534544.html
 
 ## 部署
 1. 编译
+编译环境 go1.15+   
 go build
 
 2. 填写配置文件  
