@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"time"
 )
 
 func errorExit(err error) {
@@ -26,5 +27,17 @@ func errorTolerate(err error) {
 func printLog(smg interface{}) {
 	pc, _, _, _ := runtime.Caller(2)
 	funcName := runtime.FuncForPC(pc).Name() // 获取函数调用者的名字
-	log.Println("Function: " + funcName + "  message: \n" +  fmt.Sprint(smg))
+	log.Println("Function: " + funcName + "  message: \n" + fmt.Sprint(smg))
+}
+
+// 功能：耗时统计 使用方式：在行数首行执行 defer timeCost()()
+func timeCost() func() {
+	start := time.Now()
+	pc, _, _, _ := runtime.Caller(2)
+	funcName := runtime.FuncForPC(pc).Name() // 获取函数调用者的名字
+	return func() {
+		tc := time.Since(start)
+		log.Printf("Function: "+funcName+"(). Run finished. Time cost = %v\n", tc)
+		// fmt.Printf("time cost = %v\n", tc)
+	}
 }
