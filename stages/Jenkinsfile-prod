@@ -243,7 +243,7 @@ pipeline {
                     GITVER = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     sh "cp /home/ec2-user/.awstools/keys/gitpuller_rsa_gitvv ./; \
                         git rev-parse --short HEAD > version; \
-                        docker build  --no-cache --network=host -t ${ecrUrl}:${GITVER}_${curTime} -f Dockerfile .; \
+                        docker build  --no-cache --network=host -t ${ecrUrl}:${GITVER}_${curTime} -f stages/Dockerfile .; \
                         "
                     def docker_login = sh(returnStdout: true, script: 'aws ecr get-login --no-include-email --region us-east-1')
                     sh "${docker_login}"
