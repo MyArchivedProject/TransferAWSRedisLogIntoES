@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ type esConf struct {
 
 func connectES() *elasticsearch.Client {
 	if viper.GetString("es.address") == "" {
-		errorExit(fmt.Errorf("%s", "Can not get es address from config"))
+		PrintErrorExit(fmt.Errorf("%s", "Can not get es address from config"))
 	}
 
 	var addressArr []string = make([]string, 0)
@@ -34,7 +34,7 @@ func connectES() *elasticsearch.Client {
 		Username:   "",
 		Password:   "",
 	}
-	printLog("connecting es: address=" + addressArr[0] + "; elasticsearchSDKVersion=" + elasticsearch.Version)
+	PrintLog("connecting es: address=" + addressArr[0] + "; elasticsearchSDKVersion=" + elasticsearch.Version)
 
 	cfg := elasticsearch.Config{
 		Addresses: esConf.AddressArr,
@@ -43,22 +43,22 @@ func connectES() *elasticsearch.Client {
 	}
 	es, err := elasticsearch.NewClient(cfg)
 
-	errorExit(err)
+	PrintErrorExit(err)
 
 	res, err := es.Info()
-	errorExit(err)
+	PrintErrorExit(err)
 
 	defer res.Body.Close()
 	if res.IsError() {
-		errorExit(fmt.Errorf("%s", res.String()))
+		PrintErrorExit(fmt.Errorf("%s", res.String()))
 	}
-	printLog(res)
+	PrintLog(res)
 	return es
 }
 
 func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, index string) {
 	slowlogNum := len(dataArr)
-	printLog("将向ES批量插入 " + strconv.Itoa(slowlogNum) + " 条数据")
+	PrintLog("将向ES批量插入 " + strconv.Itoa(slowlogNum) + " 条数据")
 	var bodyBuf bytes.Buffer
 
 	// 遍历慢日志 生成Buffer
@@ -102,9 +102,9 @@ func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, ind
 	}
 	res, err := req.Do(context.Background(), es)
 	defer res.Body.Close()
-	errorTolerate(err)
+	PrintErrorTolerate(err)
 
-	printLog(res.String())
+	PrintLog(res.String())
 }
 
 // 未使用到
@@ -134,11 +134,11 @@ func insertSiingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 
 	res, err := req.Do(context.Background(), es)
 
-	errorTolerate(err)
+	PrintErrorTolerate(err)
 
 	defer res.Body.Close()
 
-	printLog(res)
+	PrintLog(res)
 }
 
 // PushDataToES 批量推数据进es
@@ -146,5 +146,5 @@ func PushDataToES(dataArr []map[string]interface{}) {
 	es := connectES()
 	index := viper.GetString("es.index")
 	insertBatch(es, dataArr, index)
-	printLog("批量插入数据进ES结束")
+	PrintLog("批量插入数据进ES结束")
 }

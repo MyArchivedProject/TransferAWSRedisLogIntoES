@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ func initAWS() (sess *session.Session) {
 	// 	Credentials: credentials.NewSharedCredentials("", "default"), // 从~/.aws/credentials加载key和密钥
 	// })
 
-	errorExit(err)
+	PrintErrorExit(err)
 
 	return
 }
@@ -61,8 +61,8 @@ func connectElasticache(session *session.Session) (svc *elasticache.ElastiCache)
 	svc = elasticache.New(session)
 
 	// if svc == nil {
-	// 	// errorExit(errors.New("Can not get connect to AWS Elasticache"))
-	// 	errorExit(fmt.Errorf("%s", "Can not get connect to AWS Elasticache"))
+	// 	// PrintErrorExit(errors.New("Can not get connect to AWS Elasticache"))
+	// 	PrintErrorExit(fmt.Errorf("%s", "Can not get connect to AWS Elasticache"))
 	// }
 	return
 }
@@ -76,7 +76,7 @@ func getAllRedisNodeInfo(svc *elasticache.ElastiCache) []*elasticache.CacheClust
 	}
 	result, err := svc.DescribeCacheClusters(input)
 	if err != nil {
-		printLog("aws-sdk-go SDK 自己处理异常")
+		PrintLog("aws-sdk-go SDK 自己处理异常")
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
 			case elasticache.ErrCodeCacheClusterNotFoundFault:
