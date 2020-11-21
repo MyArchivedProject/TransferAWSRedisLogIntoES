@@ -48,4 +48,4 @@ spec:
                 items:
                   - key: config.yaml
                     path: config.yaml
-            restartPolicy: OnFailure
+        restartPolicy: OnFailure
