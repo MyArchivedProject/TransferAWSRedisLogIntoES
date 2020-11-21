@@ -1,8 +1,8 @@
 # GoAWS
-参考文档
-https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html
-https://pkg.go.dev/github.com/go-redis/redis/v8#pkg-functions
-https://github.com/elastic/go-elasticsearch
+- 参考文档  
+https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html  
+https://pkg.go.dev/github.com/go-redis/redis/v8#pkg-functions  
+https://github.com/elastic/go-elasticsearch  
 
 https://www.cnblogs.com/Me1onRind/p/11534544.html
 
@@ -17,7 +17,7 @@ https://www.cnblogs.com/Me1onRind/p/11534544.html
 go build
 
 2. 填写配置文件
-cp config.template.yaml .config.yaml
-vim .config.yaml
+cp config.template.yaml .config.yaml  
+vim .config.yaml  
 
 3. 运行二进制文件
