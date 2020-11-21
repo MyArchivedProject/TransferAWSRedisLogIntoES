@@ -28,16 +28,16 @@ def ppl_parameters = [
                         defaultValue: _refspec,
                         description: 'branch like:\norigin/develop\norigin/develop\n\nor commit id like:\n0cc7b33aa',
                         name: 'refspec'),
-        // 'code_reviewer'   :
-        //         string(
-        //                 defaultValue: '',
-        //                 description: 'Code review 负责人；多个人时使用半角逗号分隔；不要带空格，空格不会被忽略',
-        //                 name: 'code_reviewer'),
-        // 'qa_approver'     :
-        //         string(
-        //                 defaultValue: '',
-        //                 description: 'QA 负责人；多个人时使用半角逗号分隔；不要带空格，空格不会被忽略',
-        //                 name: 'qa_approver'),
+        'code_reviewer'   :
+                string(
+                        defaultValue: '',
+                        description: 'Code review 负责人；多个人时使用半角逗号分隔；不要带空格，空格不会被忽略',
+                        name: 'code_reviewer'),
+        'qa_approver'     :
+                string(
+                        defaultValue: '',
+                        description: 'QA 负责人；多个人时使用半角逗号分隔；不要带空格，空格不会被忽略',
+                        name: 'qa_approver'),
 ]
 
 
@@ -95,7 +95,7 @@ pipeline {
                                 GET_BUILD_USER = sh(script: 'echo "${BUILD_USER}"', returnStdout: true).trim()
                                 echo "build user: ${GET_BUILD_USER_ID}(${GET_BUILD_USER})"
                             }
-                            def psize = .size()
+                            def psize = ppl_params.size()
                             if (psize > 0) {
                                 for (entry in ppl_params) {
                                     echo entry.key + "=" + entry.value

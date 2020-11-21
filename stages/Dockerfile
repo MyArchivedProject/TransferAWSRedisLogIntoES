@@ -1,7 +1,7 @@
 FROM golang:1.15.5-alpine as builder
 WORKDIR /opt/data1
 ADD . /opt/data1
-CMD go build -ldflags "-s -w" -o goaws
+RUN go build -ldflags "-s -w" -o goaws && ls 
 
 FROM alpine:3.12 as deployer
 WORKDIR /opt/data1
