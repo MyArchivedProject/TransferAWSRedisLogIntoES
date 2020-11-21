@@ -21,6 +21,8 @@ metadata:
   name: elasticachelogetler-cron-prod
 spec:
   schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
   jobTemplate:
     spec:
       template:
