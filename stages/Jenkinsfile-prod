@@ -265,8 +265,10 @@ pipeline {
                 script {
                 sh "export KUBECONFIG=~/.kube/config--vpc-infra-eks1 ; \
                     kubectl apply -f stages/manifests/elasticachelogetler-cron-prod.yaml; \
-                    kubectl get cronjob | grep 'elasticachelogetler-cron-prod\\|NAME'; \
                     kubectl get cronjob elasticachelogetler-cron-prod -o yaml; \
+                    kubectl get cronjob | grep 'elasticachelogetler-cron-prod\\|NAME'; \
+                    kubectl get job elasticachelogetler-cron-prod; \
+                    kubectl get pod elasticachelogetler-cron-prod; \
                    "
                 }
             }
