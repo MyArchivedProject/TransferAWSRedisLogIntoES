@@ -249,7 +249,7 @@ pipeline {
                     sh "${docker_login}"
                     sh "docker push ${ecrUrl}:${GITVER}_${curTime}; \
                         docker rmi ${ecrUrl}:${GITVER}_${curTime}; \
-                        sed -i \"s#image: images_tag#image: ${ecrUrl}:${GITVER}_${curTime}#g\"  stages/manifests/elasticachelogetler-prod.yaml \
+                        sed -i \"s#image: images_tag#image: ${ecrUrl}:${GITVER}_${curTime}#g\"  stages/manifests/elasticachelogetler-cron-prod.yaml \
                        "
                 }
             }
@@ -264,9 +264,9 @@ pipeline {
             steps {
                 script {
                 sh "export KUBECONFIG=~/.kube/config--vpc-infra-eks1 ; \
-                    kubectl apply -f stages/manifests/elasticachelogetler-prod.yaml; \
-                    kubectl get cronjob | grep 'elasticachelogetler-prod\\|NAME'; \
-                    kubectl get cronjob elasticachelogetler-prod -o yaml; \
+                    kubectl apply -f stages/manifests/elasticachelogetler-cron-prod.yaml; \
+                    kubectl get cronjob | grep 'elasticachelogetler-cron-prod\\|NAME'; \
+                    kubectl get cronjob elasticachelogetler-cron-prod -o yaml; \
                    "
                 }
             }
