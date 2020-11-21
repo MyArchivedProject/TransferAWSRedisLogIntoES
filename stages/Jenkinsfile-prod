@@ -1,0 +1,363 @@
+#!/usr/bin/env groovy
+
+import groovy.json.JsonSlurper
+
+def _refspec = "develop"
+if (_refspec == "auto") {
+    _refspec = "releasep/r" + (new Date()).format("yyyyMMdd", TimeZone.getTimeZone('+8'))
+}
+
+
+// def super_user = ['yzhang', 'txu', 'zxwen', 'yywang1', 'cywang3', 'ywang11']
+Date now = new Date()
+curTime = now.format("yyyyMMdd_HHmmss", TimeZone.getTimeZone('UTC'))
+
+
+// 定义可选参数
+def ppl_parameters = [
+        'refspec'         :
+                string(
+                        defaultValue: _refspec,
+                        description: 'branch like:\norigin/develop\norigin/develop\n\nor commit id like:\n0cc7b33aa',
+                        name: 'refspec'),
+        // 'code_reviewer'   :
+        //         string(
+        //                 defaultValue: '',
+        //                 description: 'Code review 负责人；多个人时使用半角逗号分隔；不要带空格，空格不会被忽略',
+        //                 name: 'code_reviewer'),
+        // 'qa_approver'     :
+        //         string(
+        //                 defaultValue: '',
+        //                 description: 'QA 负责人；多个人时使用半角逗号分隔；不要带空格，空格不会被忽略',
+        //                 name: 'qa_approver'),
+]
+
+
+// 保存选择的参数结果，供后面使用
+def ppl_params = [:]
+ppl_params['DEVOPS_GIT_REPO_BASE'] = 'ssh://git@git.gitvv.com:38022/devops'
+
+
+pipeline {
+    agent {
+        label 'deployer-scm'
+    }
+    options {
+        skipDefaultCheckout()
+        timestamps()
+        disableConcurrentBuilds()
+        //ansiColor('xterm')
+        ansiColor('vga')
+        buildDiscarder(logRotator(daysToKeepStr: '30', numToKeepStr: '100'))
+        //timeout(time: 5, unit: 'MINUTES')
+    }
+    stages {
+        stage('Init Parameters') {
+            steps {
+                timeout(time: 300, unit: 'SECONDS') {
+                    script {
+                        def ppp = []
+                        for (element in ppl_parameters) {
+                            ppp.add(element.value)
+                        }
+                        def userInput = input(id: 'userInputs', message: '请确认填写正确的构建参数！', parameters: ppp)
+                        echo("---------------------------===============")
+                        echo("refspec: " + userInput['refspec'])
+                        echo("userInput:" + userInput)
+
+                        for (ele in userInput) {
+                            ppl_params[ele.key] = ele.value
+                        }
+
+                        //echo "code review 指定负责人是1: " + ppl_params.code_reviewer // 这个ok
+                        //echo "code review 指定负责人是2: " + ppl_params['code_reviewer'] // 这个ok
+                        //echo "code review 指定负责人是3: " + $ppl_params.code_reviewer // 这个不行
+                    }
+                }
+            }
+        }
+        stage('Check Parameters') {
+            steps {
+                timeout(time: 60, unit: 'SECONDS') {
+                    script {
+                        try {
+                            def GET_BUILD_USER_ID
+                            def GET_BUILD_USER
+                            wrap([$class: 'BuildUser']) {
+                                GET_BUILD_USER_ID = sh(script: 'echo "${BUILD_USER_ID}"', returnStdout: true).trim()
+                                GET_BUILD_USER = sh(script: 'echo "${BUILD_USER}"', returnStdout: true).trim()
+                                echo "build user: ${GET_BUILD_USER_ID}(${GET_BUILD_USER})"
+                            }
+                            def psize = ppl_params.size()
+                            if (psize > 0) {
+                                for (entry in ppl_params) {
+                                    echo entry.key + "=" + entry.value
+                                    if (entry.value == '') {
+                                        echo entry.key + "为空"
+                                        //sh "exit 1"
+                                        //break
+                                        if (entry.key != "virtual_stack_id") {
+                                            throw new Exception(entry.key + "为空，请补全")
+                                        }
+                                    }
+                                }
+                                ppl_params['version'] = ""
+                            }
+                        } catch (Exception e) {
+                            echo "throw exception and exit, message: ${e.message}"
+                            sh 'exit 1'
+                            //currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+            }
+        }
+        // stage('Code Review') {
+        //     when {
+        //         expression {
+        //             return !(ppl_params.param_stage_name ==~ /.*-test/)
+        //         }
+        //     }
+        //     steps {
+        //         timeout(time: 30, unit: 'MINUTES') {
+        //             script {
+        //                 // 通知负责人来确认，最好能提供链接直接点进来
+        //                 notifyCodeReview(ppl_params)
+
+        //                 //Thread.sleep((long) 1000 * 60 * 2)//睡眠两分钟
+
+        //                 def GET_BUILD_USER
+        //                 wrap([$class: 'BuildUser']) {
+        //                     GET_BUILD_USER = sh(script: 'echo "${BUILD_USER_ID}"', returnStdout: true).trim()
+        //                 }
+
+        //                 echo "code review 指定负责人是: " + ppl_params.code_reviewer
+        //                 def crr = input(message: "代码是否已review且没问题？", ok: "确认代码已review且没问题！", submitter: ppl_params.code_reviewer, submitterParameter: 'code_reviewer_do')
+        //                 //def crr = input(message: "代码是否已review且没问题？", ok: "确认代码已review且没问题！", submitter: "yzhang", submitterParameter: 'code_reviewer_do')
+        //                 echo "code review 负责人是: $crr"
+        //                 //echo "$crr == " + ppl_params.code_reviewer
+        //                 if ("" == ppl_params.code_reviewer) {
+        //                     echo "code review 负责人不能为空."
+        //                     sh "exit 1"
+        //                 }
+        //                 if ("$GET_BUILD_USER" == "$crr" && !super_user.contains(crr)) {
+        //                     echo "code review 负责人不能是自己."
+        //                     sh "exit 1"
+        //                 }
+        //                 if ("$crr" == ppl_params.code_reviewer) {
+        //                     echo "code review passed."
+        //                 } else {
+        //                     echo "code review 负责人不匹配. $crr != " + ppl_params.code_reviewer
+        //                     sh "exit 1"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        // stage('QA') {
+        //     when {
+        //         expression {
+        //             return !(ppl_params.param_stage_name ==~ /.*-test/)
+        //         }
+        //     }
+        //     steps {
+        //         timeout(time: 30, unit: 'MINUTES') {
+        //             script {
+        //                 // 通知负责人来确认，最好能提供链接直接点进来
+        //                 notifyQA(ppl_params)
+
+        //                 def GET_BUILD_USER
+        //                 wrap([$class: 'BuildUser']) {
+        //                     GET_BUILD_USER = sh(script: 'echo "${BUILD_USER_ID}"', returnStdout: true).trim()
+        //                 }
+
+        //                 echo "QA 指定负责人是: " + ppl_params.qa_approver
+        //                 def tr = input(message: "确认可以发P环境？", ok: "确认可以发P环境！", submitter: ppl_params.qa_approver + ",cnxu,shuang,yfliu,czhang1,ywang11", submitterParameter: 'qa_approver_do')
+        //                 //def tr = input(message: "确认可以发P环境？", ok: "确认可以发P环境！", submitter: "cnxu,shuang", submitterParameter: 'qa_approver_do')
+        //                 echo "QA 负责人是: $tr"
+        //                 if ("" == ppl_params.qa_approver) {
+        //                     echo "QA 负责人不能为空."
+        //                     sh "exit 1"
+        //                 }
+        //                 if ("$GET_BUILD_USER" == "$tr" && !super_user.contains(tr)) {
+        //                     echo "QA 负责人不能是自己."
+        //                     sh "exit 1"
+        //                 }
+        //                 if ("$tr" == ppl_params.qa_approver) {
+        //                     echo "QA passed."
+        //                 } else {
+        //                     echo "QA 负责人不匹配. $tr != " + ppl_params.qa_approver
+        //                     sh "exit 1"
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        stage('Checkout') {
+            agent {
+                label 'deployer-scm'
+            }
+            steps {
+                script {
+					def refspec = ppl_params.refspec
+					checkout([$class: 'GitSCM', branches: [[name: "${refspec}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'b86f9919-deee-4bdf-94fc-c81fa69186c2', url: 'ssh://git@git.gitvv.com:38022/devops/elasticachelogetler.git']]])
+                }
+
+            }
+        }
+        stage('docker login') {
+            agent {
+                label 'deployer-scm'
+            }
+            options {
+                skipDefaultCheckout true
+            }
+            steps {
+                script {
+                    docker_login = sh(returnStdout: true, script: 'aws ecr get-login --no-include-email --region us-east-1')
+                }
+            }
+        }
+        stage('Building image') {
+            agent {
+                label 'deployer-scm'
+            }
+            options {
+                skipDefaultCheckout true
+            }
+            steps {
+                script {
+
+					def add_tag = ppl_params.add_tag
+					def refspec = ppl_params.refspec
+
+
+                    GITVER = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    sh "cp /home/ec2-user/.awstools/keys/gitpuller_rsa_gitvv ./; \
+                        git rev-parse --short HEAD > version; \
+                        docker build  --no-cache --network=host -t 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime} -f Dockerfile .; \
+                        "
+                    def docker_login = sh(returnStdout: true, script: 'aws ecr get-login --no-include-email --region us-east-1')
+                    sh "${docker_login}"
+                    sh "docker push 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime}; \
+                        docker rmi 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime}; \
+                        sed -i \"s#image: images_tag#image: 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime}#g\"  stages/manifests/elasticachelogetler-prod.yaml \
+                       "
+                }
+            }
+        }
+        stage('apply cronjob') {
+            agent {
+                label 'deployer-scm'
+            }
+            options {
+                skipDefaultCheckout true
+            }
+            steps {
+                script {
+                sh "export KUBECONFIG=~/.kube/config--vpc-infra-eks1 ; \
+                    kubectl apply -f stages/manifests/elasticachelogetler-prod.yaml; \
+                    kubectl get cronjob | grep 'elasticachelogetler-prod\\|NAME'; \
+                    kubectl get cronjob elasticachelogetler-prod -o yaml; \
+                   "
+                }
+            }
+        }
+    }
+    post {
+        cleanup {
+            /* clean up our workspace */
+            deleteDir()
+            /* clean up tmp directory */
+            dir("${workspace}@2") {
+                deleteDir()
+            }
+            dir("${workspace}@tmp") {
+                deleteDir()
+            }
+            dir("${workspace}@2@tmp") {
+                deleteDir()
+            }
+            /* clean up script directory */
+            dir("${workspace}@script") {
+                deleteDir()
+            }
+        }
+    }
+}
+
+
+def notifyCodeReview(ppl_params) {
+// 通知QA的机器人
+//https://oapi.dingtalk.com/robot/send?access_token=3d57c69ce695374c92bccfb8a6aea7023d9525c314010f2b9f00125bd2827b86
+// 通知发布进度的机器人
+//https://oapi.dingtalk.com/robot/send?access_token=7e02f257e7251867d7c5480e3947f25af20ca5c451c90e80b28a2fa60cf4da2b
+    script {
+        def GET_BUILD_USER_ID
+        def GET_BUILD_USER
+        wrap([$class: 'BuildUser']) {
+            GET_BUILD_USER_ID = sh(script: 'echo "${BUILD_USER_ID}"', returnStdout: true).trim()
+            GET_BUILD_USER = sh(script: 'echo "${BUILD_USER}"', returnStdout: true).trim()
+        }
+        def git_project = ppl_params.git_project
+        def param_stage_name = ppl_params.param_stage_name
+        def refspec = ppl_params.refspec
+        def code_reviewer = ppl_params.code_reviewer
+        sh """
+            curl -k -sS 'https://oapi.dingtalk.com/robot/send?access_token=7e02f257e7251867d7c5480e3947f25af20ca5c451c90e80b28a2fa60cf4da2b' \\
+                -H 'Content-Type: application/json' \\
+                -d '{
+                        "msgtype": "markdown",
+                        "markdown": {
+                            "title": "${git_project} - ${JOB_BASE_NAME} 发布，待 ${code_reviewer} 确认 Code Review 结果！",
+                            "text": "#### ${git_project} - ${JOB_BASE_NAME} 发布，待 ${code_reviewer} 确认 Code Review 结果！\n
+  > BuildUser: ${GET_BUILD_USER_ID}(${GET_BUILD_USER})\n
+  > Branch: ${refspec}\n
+  > StageName: ${param_stage_name}\n
+  > BUILD_URL: [${BUILD_URL}](${BUILD_URL})\n
+  > JOB_DISPLAY_URL: [${JOB_DISPLAY_URL}](${JOB_DISPLAY_URL})\n
+  > RUN_DISPLAY_URL: [${RUN_DISPLAY_URL}](${RUN_DISPLAY_URL})
+"
+                        }
+                    }'
+        """
+    }
+}
+
+def notifyQA(ppl_params) {
+// 通知QA的机器人
+//https://oapi.dingtalk.com/robot/send?access_token=3d57c69ce695374c92bccfb8a6aea7023d9525c314010f2b9f00125bd2827b86
+// 通知发布进度的机器人
+//https://oapi.dingtalk.com/robot/send?access_token=7e02f257e7251867d7c5480e3947f25af20ca5c451c90e80b28a2fa60cf4da2b
+    script {
+        def GET_BUILD_USER_ID
+        def GET_BUILD_USER
+        wrap([$class: 'BuildUser']) {
+            GET_BUILD_USER_ID = sh(script: 'echo "${BUILD_USER_ID}"', returnStdout: true).trim()
+            GET_BUILD_USER = sh(script: 'echo "${BUILD_USER}"', returnStdout: true).trim()
+        }
+        def git_project = ppl_params.git_project
+        def param_stage_name = ppl_params.param_stage_name
+        def refspec = ppl_params.refspec
+        def qa_approver = ppl_params.qa_approver
+        sh """
+            curl -k -sS 'https://oapi.dingtalk.com/robot/send?access_token=3d57c69ce695374c92bccfb8a6aea7023d9525c314010f2b9f00125bd2827b86' \\
+                -H 'Content-Type: application/json' \\
+                -d '{
+                        "msgtype": "markdown",
+                        "markdown": {
+                            "title": "${git_project} - ${JOB_BASE_NAME} 发布，待 ${qa_approver} 确认 QA 结果！",
+                            "text": "#### ${git_project} - ${JOB_BASE_NAME} 发布，待 ${qa_approver} 确认 QA 结果！\n
+  > BuildUser: ${GET_BUILD_USER_ID}(${GET_BUILD_USER})\n
+  > Branch: ${refspec}\n
+  > StageName: ${param_stage_name}\n
+  > BUILD_URL: [${BUILD_URL}](${BUILD_URL})\n
+  > JOB_DISPLAY_URL: [${JOB_DISPLAY_URL}](${JOB_DISPLAY_URL})\n
+  > RUN_DISPLAY_URL: [${RUN_DISPLAY_URL}](${RUN_DISPLAY_URL})
+"
+                        }
+                    }'
+        """
+    }
+}
