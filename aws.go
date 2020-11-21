@@ -70,8 +70,8 @@ func connectElasticache(session *session.Session) (svc *elasticache.ElastiCache)
 // 通过aws API拉取aws elasticache 的节点信息
 func getAllRedisNodeInfo(svc *elasticache.ElastiCache) []*elasticache.CacheCluster {
 	input := &elasticache.DescribeCacheClustersInput{
-		// CacheClusterId:    aws.String("vv-andes-test-0003-001"),
-		CacheClusterId:    aws.String(""),
+		// CacheClusterId:    aws.String("test-01"),
+		CacheClusterId:    aws.String(""), // 为空则会拉取所有的redis节点信息
 		ShowCacheNodeInfo: aws.Bool(true),
 	}
 	result, err := svc.DescribeCacheClusters(input)
