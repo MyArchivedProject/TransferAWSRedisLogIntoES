@@ -6,6 +6,14 @@ def _refspec = "develop"
 if (_refspec == "auto") {
     _refspec = "releasep/r" + (new Date()).format("yyyyMMdd", TimeZone.getTimeZone('+8'))
 }
+// def credentialsId = "b86f9919-deee-4bdf-94fc-c81fa69186c2"
+// def gitUrl = "ssh://git@git.gitvv.com:38022/devops/elasticachelogetler.git"
+// def ecrUrl = "512358210769.dkr.ecr.us-east-1.amazonaws.com"
+
+// vova
+def credentialsId = "b86f9919-deee-4bdf-94fc-c81fa69186c2"
+def gitUrl = "ssh://git@git.gitvv.com:38022/devops/elasticachelogetler.git"
+def ecrUrl = "832373879023.dkr.ecr.us-east-1.amazonaws.com/devops/elasticachelogetler"
 
 
 // def super_user = ['yzhang', 'txu', 'zxwen', 'yywang1', 'cywang3', 'ywang11']
@@ -35,12 +43,11 @@ def ppl_parameters = [
 
 // 保存选择的参数结果，供后面使用
 def ppl_params = [:]
-ppl_params['DEVOPS_GIT_REPO_BASE'] = 'ssh://git@git.gitvv.com:38022/devops'
 
 
 pipeline {
     agent {
-        label 'deployer-scm'
+        label 'deployer-vova'
     }
     options {
         skipDefaultCheckout()
@@ -88,7 +95,7 @@ pipeline {
                                 GET_BUILD_USER = sh(script: 'echo "${BUILD_USER}"', returnStdout: true).trim()
                                 echo "build user: ${GET_BUILD_USER_ID}(${GET_BUILD_USER})"
                             }
-                            def psize = ppl_params.size()
+                            def psize = .size()
                             if (psize > 0) {
                                 for (entry in ppl_params) {
                                     echo entry.key + "=" + entry.value
@@ -201,7 +208,7 @@ pipeline {
             steps {
                 script {
 					def refspec = ppl_params.refspec
-					checkout([$class: 'GitSCM', branches: [[name: "${refspec}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'b86f9919-deee-4bdf-94fc-c81fa69186c2', url: 'ssh://git@git.gitvv.com:38022/devops/elasticachelogetler.git']]])
+					checkout([$class: 'GitSCM', branches: [[name: "${refspec}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: "${credentialsId}", url: "${gitUrl}"]]])
                 }
 
             }
@@ -236,13 +243,13 @@ pipeline {
                     GITVER = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     sh "cp /home/ec2-user/.awstools/keys/gitpuller_rsa_gitvv ./; \
                         git rev-parse --short HEAD > version; \
-                        docker build  --no-cache --network=host -t 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime} -f Dockerfile .; \
+                        docker build  --no-cache --network=host -t ${ecrUrl}:${GITVER}_${curTime} -f Dockerfile .; \
                         "
                     def docker_login = sh(returnStdout: true, script: 'aws ecr get-login --no-include-email --region us-east-1')
                     sh "${docker_login}"
-                    sh "docker push 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime}; \
-                        docker rmi 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime}; \
-                        sed -i \"s#image: images_tag#image: 512358210769.dkr.ecr.us-east-1.amazonaws.com/elasticachelogetler:${GITVER}_${curTime}#g\"  stages/manifests/elasticachelogetler-prod.yaml \
+                    sh "docker push ${ecrUrl}:${GITVER}_${curTime}; \
+                        docker rmi ${ecrUrl}:${GITVER}_${curTime}; \
+                        sed -i \"s#image: images_tag#image: ${ecrUrl}:${GITVER}_${curTime}#g\"  stages/manifests/elasticachelogetler-prod.yaml \
                        "
                 }
             }
