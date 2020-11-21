@@ -16,8 +16,9 @@ https://www.cnblogs.com/Me1onRind/p/11534544.html
 1. 编译
 go build
 
-2. 填写配置文件
+2. 填写配置文件  
 cp config.template.yaml .config.yaml  
 vim .config.yaml  
 
 3. 运行二进制文件
+./goaws
