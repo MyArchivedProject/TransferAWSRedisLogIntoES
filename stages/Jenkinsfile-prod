@@ -14,7 +14,7 @@ if (_refspec == "auto") {
 def credentialsId = "b86f9919-deee-4bdf-94fc-c81fa69186c2"
 def gitUrl = "ssh://git@git.gitvv.com:38022/devops/elasticachelogetler.git"
 def ecrUrl = "832373879023.dkr.ecr.us-east-1.amazonaws.com/devops/elasticachelogetler"
-
+def agentLabel = "deployer-vova"
 
 // def super_user = ['yzhang', 'txu', 'zxwen', 'yywang1', 'cywang3', 'ywang11']
 Date now = new Date()
@@ -47,7 +47,7 @@ def ppl_params = [:]
 
 pipeline {
     agent {
-        label 'deployer-vova'
+        label "${agentLabel}"
     }
     options {
         skipDefaultCheckout()
@@ -203,7 +203,7 @@ pipeline {
 
         stage('Checkout') {
             agent {
-                label 'deployer-scm'
+                label "${agentLabel}"
             }
             steps {
                 script {
@@ -215,7 +215,7 @@ pipeline {
         }
         stage('docker login') {
             agent {
-                label 'deployer-scm'
+                label "${agentLabel}"
             }
             options {
                 skipDefaultCheckout true
@@ -228,7 +228,7 @@ pipeline {
         }
         stage('Building image') {
             agent {
-                label 'deployer-scm'
+                label "${agentLabel}"
             }
             options {
                 skipDefaultCheckout true
@@ -256,7 +256,7 @@ pipeline {
         }
         stage('apply cronjob') {
             agent {
-                label 'deployer-scm'
+                label "${agentLabel}"
             }
             options {
                 skipDefaultCheckout true
