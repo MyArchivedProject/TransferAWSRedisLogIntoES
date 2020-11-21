@@ -26,26 +26,27 @@ spec:
       template:
         spec:
           containers:
-            - name: elasticachelogetler-cron-prod
-              image: images_tag
-              # args:
-              # - /bin/sh
-              # - -c
-              # - date; echo Hello from the Kubernetes cluster
-              volumeMounts:
-                - name: fish-tracking-front-conf-prod
-                  mountPath: /etc/nginx/conf.d
-                - name: elasticachelogetler-conf
-                  mountPath: /opt/data1/.config.yaml
-                  subPath: .config.yaml
+          - name: elasticachelogetler-cron-prod
+            image: images_tag
+            # args:
+            # - /bin/sh
+            # - -c
+            # - date; echo Hello from the Kubernetes cluster
+            volumeMounts:
+              - name: fish-tracking-front-conf-prod
+                mountPath: /etc/nginx/conf.d
+              - name: elasticachelogetler-conf
+                mountPath: /opt/data1/.config.yaml
+                subPath: .config.yaml
+          restartPolicy: OnFailure
           volumes:
             # - name: elasticachelogetler-cron-log-prod
             #   hostPath:
             #     path: /opt/data1/logs/elasticachelogetler-cron/prod/
-            - name: elasticachelogetler-conf
-              configMap:
-                name: elasticachelogetler-conf
-                items:
-                  - key: config.yaml
-                    path: config.yaml
-        restartPolicy: OnFailure
+          - name: elasticachelogetler-conf
+            configMap:
+              name: elasticachelogetler-conf
+              items:
+                - key: config.yaml
+                  path: config.yaml
+        
