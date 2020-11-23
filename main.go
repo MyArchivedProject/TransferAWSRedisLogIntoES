@@ -36,7 +36,7 @@ func run() {
 	byteData, _ := json.Marshal(allSlowLogArr)
 	var dataArr []map[string]interface{}
 	_ = json.Unmarshal(byteData, &dataArr)
-	goaws.PushDataToES(dataArr)
+	goaws.PushDataToES6(dataArr)
 }
 func test(){
 	goaws.InitConfig("")
@@ -56,7 +56,7 @@ func test(){
 	byteData, _ := json.Marshal(allSlowLogArr)
 	var dataArr []map[string]interface{}
 	_ = json.Unmarshal(byteData, &dataArr)
-	goaws.PushDataToES(dataArr)
+	goaws.PushDataToES6(dataArr)
 
 	// test
 	// data, _ := json.Marshal(allSlowLogArr)
