@@ -23,7 +23,7 @@ type RedisSlowLog struct {
 	RedisPort    int64  `type:"int"`
 	ID           int64
 	Time         time.Time
-	Duration     time.Duration // 毫秒
+	Duration     time.Duration // 微妙
 	Args         []string
 }
 
@@ -96,7 +96,7 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 			connectRedisSuccessNum++
 			// 遍历节点上所有的慢日志
 			slowLogArr := getSlowLog(rdb, slowlogNum)
-			PrintLog( "redisID=" + redisID + "; 慢日志数量=" + strconv.Itoa(len(slowLogArr)) )
+			PrintLog("redisID=" + redisID + "; 慢日志数量=" + strconv.Itoa(len(slowLogArr)))
 			for j := 0; j < len(slowLogArr); j++ {
 				slowLog := &RedisSlowLog{
 					RedisCluster: clustName,
@@ -105,11 +105,12 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 					RedisPort:    port,
 					ID:           slowLogArr[j].ID,
 					Time:         slowLogArr[j].Time,
-					Duration:     slowLogArr[j].Duration / 1000,
+					Duration:     slowLogArr[j].Duration / 1e3,
 					Args:         slowLogArr[j].Args,
 				}
 				redisSlowLogArr = append(redisSlowLogArr, *slowLog)
 			}
+
 		}
 	}
 	PrintLog("End. redisNodeNum=" + strconv.Itoa(nodeNum) + "connectRedisSuccessNum" + strconv.Itoa(connectRedisSuccessNum))
