@@ -105,57 +105,6 @@ func insertBatchES7(es *elasticsearch7.Client, dataArr []map[string]interface{},
 	PrintLog(res.String())
 }
 
-func insertBatchES6(es *elasticsearch7.Client, dataArr []map[string]interface{}, index string) {
-	slowlogNum := len(dataArr)
-	PrintLog("将向ES批量插入 " + strconv.Itoa(slowlogNum) + " 条数据")
-	var bodyBuf bytes.Buffer
-
-	// 遍历慢日志 生成Buffer
-	for i := 0; i < slowlogNum; i++ {
-
-		// 创建唯一ID,防止重复插入
-		timeTemp, _ := time.Parse("2006-01-02T15:04:05+08:00", dataArr[i]["Time"].(string))
-		timeStamp := timeTemp.Unix()
-		// uniqID := dataArr[i]["RedisAddress"].(string) + strconv.FormatFloat(dataArr[i]["ID"].(float64), 'E', -1, 64) + strconv.FormatInt(timeStamp, 10)
-		uniqID := fmt.Sprint(dataArr[i]["RedisAddress"], dataArr[i]["ID"], timeStamp)
-
-		createLine := map[string]interface{}{
-			"create": map[string]interface{}{
-				"_index": index,
-				"_id":    uniqID,
-			},
-		}
-
-		// fmt.Println(dataArr[i]["Duration"])
-		// fmt.Println(dataArr[i]["ID"])
-		// fmt.Println(dataArr[i]["RedisAddress"])
-		// fmt.Println(dataArr[i]["Time"])
-
-		jsonStr, _ := json.Marshal(createLine)
-		bodyBuf.Write(jsonStr)
-		bodyBuf.WriteByte('\n')
-
-		// body := map[string]interface{}{
-		// 	"num": i % 3,
-		// 	"v":   i,
-		// 	"str": "test" + strconv.Itoa(i),
-		// }
-		body := dataArr[i]
-		jsonStr, _ = json.Marshal(body)
-		bodyBuf.Write(jsonStr)
-		bodyBuf.WriteByte('\n')
-	}
-
-	req := esapi7.BulkRequest{
-		Body: &bodyBuf,
-	}
-	res, err := req.Do(context.Background(), es)
-	defer res.Body.Close()
-	PrintErrorTolerate(err)
-
-	PrintLog(res.String())
-}
-
 // 未使用到
 func insertSiingle(es *elasticsearch7.Client, redisSlowLogArr []RedisSlowLog) {
 	// 方式一
