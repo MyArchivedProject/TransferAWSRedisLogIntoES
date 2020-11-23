@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -25,6 +26,8 @@ type RedisSlowLog struct {
 	Time         time.Time
 	Duration     time.Duration // 微妙
 	Args         []string
+	SrcHost      string `type:"string"`
+	SrcPort      int64  `type:"int"`
 }
 
 type redisConf struct {
@@ -98,6 +101,15 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 			slowLogArr := getSlowLog(rdb, slowlogNum)
 			PrintLog("redisID=" + redisID + "; 慢日志数量=" + strconv.Itoa(len(slowLogArr)))
 			for j := 0; j < len(slowLogArr); j++ {
+
+				srcHost := ""
+				srcPort := int64(0)
+				if slowLogArr[j].ClientAddr != "" {
+					srcHostPort := strings.Split(slowLogArr[j].ClientAddr, ":")
+					srcHost = srcHostPort[0]
+					srcPort, _ = strconv.ParseInt(strings.Split(slowLogArr[j].ClientAddr, ":")[1], 10, 64)
+				}
+
 				slowLog := &RedisSlowLog{
 					RedisCluster: clustName,
 					RedisID:      redisID,
@@ -107,6 +119,8 @@ func GetMultiRedisSlowLog(redisNodeInfoArr []RedisNodeInfo) (redisSlowLogArr []R
 					Time:         slowLogArr[j].Time,
 					Duration:     slowLogArr[j].Duration / 1e3,
 					Args:         slowLogArr[j].Args,
+					SrcHost:      srcHost,
+					SrcPort:      srcPort,
 				}
 				redisSlowLogArr = append(redisSlowLogArr, *slowLog)
 			}
