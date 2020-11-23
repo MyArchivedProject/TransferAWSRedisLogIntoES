@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/spf13/viper"
-	// "github.com/elastic/go-elasticsearch/v7"
-	// "github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/elastic/go-elasticsearch/v6"
-	"github.com/elastic/go-elasticsearch/v6/esapi"
+	// "github.com/elastic/go-elasticsearch/v6"
+	// "github.com/elastic/go-elasticsearch/v6/esapi"
 )
 
 type esConf struct {
