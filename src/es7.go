@@ -9,11 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
+	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
+	esapi7 "github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/spf13/viper"
-	// "github.com/elastic/go-elasticsearch/v6"
-	// "github.com/elastic/go-elasticsearch/v6/esapi"
 )
 
 type esConf struct {
@@ -22,7 +20,7 @@ type esConf struct {
 	Password   string
 }
 
-func connectES() *elasticsearch.Client {
+func connectES7() *elasticsearch7.Client {
 	if viper.GetString("es.address") == "" {
 		PrintErrorExit(fmt.Errorf("%s", "Can not get es address from config"))
 	}
@@ -34,14 +32,14 @@ func connectES() *elasticsearch.Client {
 		Username:   "",
 		Password:   "",
 	}
-	PrintLog("connecting es: address=" + addressArr[0] + "; elasticsearchSDKVersion=" + elasticsearch.Version)
+	PrintLog("connecting es: address=" + addressArr[0] + "; elasticsearchSDKVersion=" + elasticsearch7.Version)
 
-	cfg := elasticsearch.Config{
+	cfg := elasticsearch7.Config{
 		Addresses: esConf.AddressArr,
 		Username:  "",
 		Password:  "",
 	}
-	es, err := elasticsearch.NewClient(cfg)
+	es, err := elasticsearch7.NewClient(cfg)
 
 	PrintErrorExit(err)
 
@@ -56,7 +54,7 @@ func connectES() *elasticsearch.Client {
 	return es
 }
 
-func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, index string) {
+func insertBatchES7(es *elasticsearch7.Client, dataArr []map[string]interface{}, index string) {
 	slowlogNum := len(dataArr)
 	PrintLog("将向ES批量插入 " + strconv.Itoa(slowlogNum) + " 条数据")
 	var bodyBuf bytes.Buffer
@@ -97,7 +95,58 @@ func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, ind
 		bodyBuf.WriteByte('\n')
 	}
 
-	req := esapi.BulkRequest{
+	req := esapi7.BulkRequest{
+		Body: &bodyBuf,
+	}
+	res, err := req.Do(context.Background(), es)
+	defer res.Body.Close()
+	PrintErrorTolerate(err)
+
+	PrintLog(res.String())
+}
+
+func insertBatchES6(es *elasticsearch7.Client, dataArr []map[string]interface{}, index string) {
+	slowlogNum := len(dataArr)
+	PrintLog("将向ES批量插入 " + strconv.Itoa(slowlogNum) + " 条数据")
+	var bodyBuf bytes.Buffer
+
+	// 遍历慢日志 生成Buffer
+	for i := 0; i < slowlogNum; i++ {
+
+		// 创建唯一ID,防止重复插入
+		timeTemp, _ := time.Parse("2006-01-02T15:04:05+08:00", dataArr[i]["Time"].(string))
+		timeStamp := timeTemp.Unix()
+		// uniqID := dataArr[i]["RedisAddress"].(string) + strconv.FormatFloat(dataArr[i]["ID"].(float64), 'E', -1, 64) + strconv.FormatInt(timeStamp, 10)
+		uniqID := fmt.Sprint(dataArr[i]["RedisAddress"], dataArr[i]["ID"], timeStamp)
+
+		createLine := map[string]interface{}{
+			"create": map[string]interface{}{
+				"_index": index,
+				"_id":    uniqID,
+			},
+		}
+
+		// fmt.Println(dataArr[i]["Duration"])
+		// fmt.Println(dataArr[i]["ID"])
+		// fmt.Println(dataArr[i]["RedisAddress"])
+		// fmt.Println(dataArr[i]["Time"])
+
+		jsonStr, _ := json.Marshal(createLine)
+		bodyBuf.Write(jsonStr)
+		bodyBuf.WriteByte('\n')
+
+		// body := map[string]interface{}{
+		// 	"num": i % 3,
+		// 	"v":   i,
+		// 	"str": "test" + strconv.Itoa(i),
+		// }
+		body := dataArr[i]
+		jsonStr, _ = json.Marshal(body)
+		bodyBuf.Write(jsonStr)
+		bodyBuf.WriteByte('\n')
+	}
+
+	req := esapi7.BulkRequest{
 		Body: &bodyBuf,
 	}
 	res, err := req.Do(context.Background(), es)
@@ -108,7 +157,7 @@ func insertBatch(es *elasticsearch.Client, dataArr []map[string]interface{}, ind
 }
 
 // 未使用到
-func insertSiingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
+func insertSiingle(es *elasticsearch7.Client, redisSlowLogArr []RedisSlowLog) {
 	// 方式一
 	// res, err = es.Index(
 	// 	"test",                                  // Index name
@@ -124,7 +173,7 @@ func insertSiingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 
 	// 单条插入 方式二
 	data, _ := json.Marshal(redisSlowLogArr[0])
-	req := esapi.IndexRequest{
+	req := esapi7.IndexRequest{
 		Index: "redis-slowlog-", // Index name
 		// Body:  strings.NewReader(`{"field1" : "Test"}`), // Document body
 		Body: strings.NewReader(string(data)), // Document body
@@ -141,10 +190,10 @@ func insertSiingle(es *elasticsearch.Client, redisSlowLogArr []RedisSlowLog) {
 	PrintLog(res)
 }
 
-// PushDataToES 批量推数据进es
-func PushDataToES(dataArr []map[string]interface{}) {
-	es := connectES()
+// PushDataToES7 批量推数据进es
+func PushDataToES7(dataArr []map[string]interface{}) {
+	es := connectES7()
 	index := viper.GetString("es.index")
-	insertBatch(es, dataArr, index)
+	insertBatchES7(es, dataArr, index)
 	PrintLog("批量插入数据进ES结束")
 }
